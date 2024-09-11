@@ -14,16 +14,17 @@ PIICSA (Picture Into Incredible ASCII art) is a web application that transforms 
 
 ## Features
 
-- Image to ASCII art conversion
-- Adjustable parameters:
+- [x] Image to ASCII art conversion
+- [x] Adjustable parameters:
   - Scale factor
   - Brightness
   - Contrast
   - Aspect ratio preservation
-- Real-time preview of uploaded image
-- Copy generated ASCII art to clipboard
-- Responsive design for both desktop and mobile devices
-- Dark and light mode support
+- [x] Real-time preview of uploaded image
+- [x] Copy generated ASCII art to the clipboard
+- [x] Responsive design for both desktop and mobile devices
+- [x] Dark and light mode support
+- [ ] Create NFT of the **ASCII ART**
 
 ## Technologies Used
 
