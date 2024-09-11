@@ -1,5 +1,9 @@
 # PIICSA - Picture to ASCII Art Generator
 
+<div align="center">
+  <img src="public/logo.svg" alt="PIICSA Logo" width="200" height="200">
+</div>
+
 PIICSA (Picture Into Incredible ASCII art) is a web application that transforms images into ASCII art. This project allows users to upload images, adjust various parameters, and generate unique ASCII representations of their pictures.
 
 ## Features
