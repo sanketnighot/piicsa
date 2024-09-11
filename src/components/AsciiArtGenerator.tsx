@@ -3,15 +3,19 @@ import { Upload, UploadCloud, Copy, Trash2, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 
-const ASCII_CHARS = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.'];
+const ASCII_CHARS = ['@', '%', '#', '*', '+', '=', '-', ':', '.', ' '];
 
 const AsciiArtGenerator: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [asciiArt, setAsciiArt] = useState<string>('');
   const [error, setError] = useState<string>('');
-  const [scaleFactor, setScaleFactor] = useState<number>(0.1);
+  const [scaleFactor, setScaleFactor] = useState<number>(0.5);
+  const [brightness, setBrightness] = useState<number>(1);
+  const [contrast, setContrast] = useState<number>(1);
+  const [preserveAspectRatio, setPreserveAspectRatio] = useState<boolean>(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -41,19 +45,49 @@ const AsciiArtGenerator: React.FC = () => {
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Unable to create canvas context');
 
-      canvas.width = img.width * scaleFactor;
-      canvas.height = img.height * scaleFactor;
+      const newWidth = Math.round(200 * scaleFactor);
+      let newHeight;
 
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      if (preserveAspectRatio) {
+        const aspectRatio = img.width / img.height;
+        newHeight = Math.round(newWidth / aspectRatio);
+      } else {
+        newHeight = Math.round(100 * scaleFactor);
+      }
+
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+
+      ctx.drawImage(img, 0, 0, newWidth, newHeight);
+      const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
       const pixels = imageData.data;
 
       let asciiImage = '';
-      for (let i = 0; i < pixels.length; i += 4) {
-        const avg = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
-        const charIndex = Math.floor(avg / 25);
-        asciiImage += ASCII_CHARS[charIndex];
-        if ((i / 4 + 1) % canvas.width === 0) asciiImage += '\n';
+      for (let y = 0; y < newHeight; y++) {
+        for (let x = 0; x < newWidth; x++) {
+          const i = (y * newWidth + x) * 4;
+          const r = pixels[i];
+          const g = pixels[i + 1];
+          const b = pixels[i + 2];
+          
+          const avg = (0.299 * r + 0.587 * g + 0.114 * b);
+          const adjustedBrightness = Math.pow(avg / 255, 1 / brightness) * 255;
+          const contrastedBrightness = (adjustedBrightness - 128) * contrast + 128;
+          const finalBrightness = Math.max(0, Math.min(255, contrastedBrightness));
+          
+          const charIndex = Math.floor((finalBrightness / 255) * (ASCII_CHARS.length - 1));
+          asciiImage += ASCII_CHARS[charIndex];
+
+          // Floyd-Steinberg dithering
+          const error = finalBrightness - (charIndex / (ASCII_CHARS.length - 1)) * 255;
+          if (x < newWidth - 1) pixels[i + 4] += error * 7 / 16;
+          if (y < newHeight - 1) {
+            if (x > 0) pixels[i + newWidth * 4 - 4] += error * 3 / 16;
+            pixels[i + newWidth * 4] += error * 5 / 16;
+            if (x < newWidth - 1) pixels[i + newWidth * 4 + 4] += error * 1 / 16;
+          }
+        }
+        asciiImage += '\n';
       }
 
       setAsciiArt(asciiImage);
@@ -61,7 +95,7 @@ const AsciiArtGenerator: React.FC = () => {
       console.error('Error generating ASCII art:', err);
       setError('Error generating ASCII art. Please try again.');
     }
-  }, [selectedFile, scaleFactor]);
+  }, [selectedFile, scaleFactor, brightness, contrast, preserveAspectRatio]);
 
   const copyAsciiArt = () => {
     navigator.clipboard.writeText(asciiArt).then(() => {
@@ -148,21 +182,74 @@ const AsciiArtGenerator: React.FC = () => {
             <p className="mb-4 text-center text-muted-foreground">Selected file: {selectedFile.name}</p>
           )}
 
-          <div className="mb-4">
-            <label htmlFor="scale-factor" className="block text-sm font-medium text-primary mb-1">
-              ASCII Art Size (smaller value = smaller art):
-            </label>
-            <input
-              type="range"
-              id="scale-factor"
-              min="0.01"
-              max="0.2"
-              step="0.01"
-              value={scaleFactor}
-              onChange={(e) => setScaleFactor(parseFloat(e.target.value))}
-              className="w-full"
-            />
-            <span className="text-sm text-muted-foreground">{scaleFactor.toFixed(2)}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="flex flex-col space-y-2">
+              <label htmlFor="preserve-aspect-ratio" className="text-sm font-medium text-primary">
+                Preserve Aspect Ratio:
+              </label>
+              <Switch
+                id="preserve-aspect-ratio"
+                checked={preserveAspectRatio}
+                onCheckedChange={setPreserveAspectRatio}
+              />
+            </div>
+
+            <div className="flex flex-col space-y-2">
+              <label htmlFor="scale-factor" className="text-sm font-medium text-primary">
+                ASCII Art Size:
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="range"
+                  id="scale-factor"
+                  min="0.1"
+                  max="1.0"
+                  step="0.1"
+                  value={scaleFactor}
+                  onChange={(e) => setScaleFactor(parseFloat(e.target.value))}
+                  className="flex-grow"
+                />
+                <span className="text-sm text-muted-foreground w-12 text-right">{scaleFactor.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col space-y-2">
+              <label htmlFor="brightness" className="text-sm font-medium text-primary">
+                Brightness:
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="range"
+                  id="brightness"
+                  min="0.5"
+                  max="1.5"
+                  step="0.1"
+                  value={brightness}
+                  onChange={(e) => setBrightness(parseFloat(e.target.value))}
+                  className="flex-grow"
+                />
+                <span className="text-sm text-muted-foreground w-12 text-right">{brightness.toFixed(1)}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col space-y-2">
+              <label htmlFor="contrast" className="text-sm font-medium text-primary">
+                Contrast:
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="range"
+                  id="contrast"
+                  min="0.5"
+                  max="1.5"
+                  step="0.1"
+                  value={contrast}
+                  onChange={(e) => setContrast(parseFloat(e.target.value))}
+                  className="flex-grow"
+                />
+                <span className="text-sm text-muted-foreground w-12 text-right">{contrast.toFixed(1)}</span>
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-center mb-6 space-x-4">
