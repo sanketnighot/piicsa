@@ -1,8 +1,8 @@
-import './App.css'
+import "./App.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import AsciiArtGenerator from './components/AsciiArtGenerator'
+import AsciiArtGenerator from "./components/AsciiArtGenerator"
 import { ModeToggle } from "./components/mode-toggle"
-import logo from '/logo.svg'  // Import the logo
+import logo from "/logo.svg" // Import the logo
 
 function App() {
   return (

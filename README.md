@@ -6,6 +6,12 @@
 
 PIICSA (Picture Into Incredible ASCII art) is a web application that transforms images into ASCII art. This project allows users to upload images, adjust various parameters, and generate unique ASCII representations of their pictures.
 
+## Preview
+
+<div align="left">
+  <img src="public/preview.png" alt="PIICSA Preview" width="60%">
+</div>
+
 ## Features
 
 - Image to ASCII art conversion
