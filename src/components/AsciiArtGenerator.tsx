@@ -182,9 +182,11 @@ const AsciiArtGenerator: React.FC = () => {
             <p className="mb-4 text-center text-muted-foreground">Selected file: {selectedFile.name}</p>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="flex flex-col space-y-2">
-              <label htmlFor="preserve-aspect-ratio" className="text-sm font-medium text-primary">
+          { selectedFile && (
+            <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="flex flex-col space-y-2">
+                <label htmlFor="preserve-aspect-ratio" className="text-sm font-medium text-primary">
                 Preserve Aspect Ratio:
               </label>
               <Switch
@@ -262,6 +264,8 @@ const AsciiArtGenerator: React.FC = () => {
               </Button>
             )}
           </div>
+          </>
+          )}
 
           {error && (
             <Alert variant="destructive" className="mb-6">
